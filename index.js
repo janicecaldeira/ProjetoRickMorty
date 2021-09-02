@@ -4,111 +4,136 @@ const ObjectId = mongodb.ObjectId;
 require("dotenv").config();
 
 (async () => {
-	const dbUser = process.env.DB_USER;
-	const dbPassword = process.env.DB_PASSWORD;
-	const dbName = process.env.DB_NAME;
+  const dbUser = process.env.DB_USER;
+  const dbPassword = process.env.DB_PASSWORD;
+  const dbName = process.env.DB_NAME;
+  const dbChar = process.env.DB_CHAR;
 
-	const app = express();
-	app.use(express.json());
+  const app = express();
+  app.use(express.json());
 
-	const port = process.env.PORT || 3000;
-	const connectionString = `mongodb+srv://${dbUser}:${dbPassword}@cluster0.nlzlu.mongodb.net/${dbName}?retryWrites=true&w=majority`;
+  const port = process.env.PORT || 3000;
+  const connectionString = `mongodb+srv://${dbUser}:${dbPassword}@cluster0.${dbChar}.mongodb.net/${dbName}?retryWrites=true&w=majority`;
 
-	const options = {
-		useUnifiedTopology: true,
-	};
+  const options = {
+    useUnifiedTopology: true,
+  };
 
-	const client = await mongodb.MongoClient.connect(connectionString, options);
+  const client = await mongodb.MongoClient.connect(connectionString, options);
 
-	const db = client.db("db_rickymorty");
-	const personagens = db.collection("personagens");
+  const db = client.db("db_rickymorty");
+  const personagens = db.collection("personagens");
 
-	const getPersonagensValidas = () => personagens.find({}).toArray();
+  const getPersonagensValidas = () => personagens.find({}).toArray();
 
-	const getPersonagemById = async (id) =>
-		personagens.findOne({ _id: ObjectId(id) });
+  const getPersonagemById = async (id) =>
+    personagens.findOne({ _id: ObjectId(id) });
 
-	//CORS
+  app.all("/*", (req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
 
-	app.all("/*", (req, res, next) => {
-		res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "*");
 
-		res.header("Access-Control-Allow-Methods", "*");
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Access-Control-Allow-Headers, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization"
+    );
 
-		res.header(
-			"Access-Control-Allow-Headers",
-			"Access-Control-Allow-Headers, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization"
-		);
+    next();
+  });
 
-		next();
-	});
+  app.get("/", (req, res) => {
+    res.send({ info: "Projeto Rick and Morty" });
+  });
 
-	app.get("/", (req, res) => {
-		res.send({ info: "Olá, Blue" });
-	});
+  app.get("/personagens", async (req, res) => {
+    res.send(await getPersonagensValidas());
+  });
 
-	//[GET] GetAllPersonagens
+  app.get("/personagens/:id", async (req, res) => {
+    const id = req.params.id;
+    const personagem = await getPersonagemById(id);
+    res.send(personagem);
+  });
 
-	app.get("/personagens", async (req, res) => {
-		res.send(await getPersonagensValidas());
-	});
+  app.post("/personagens", async (req, res) => {
+    const objeto = req.body;
 
-	//[GET] getPersonagemById
+    if (!objeto || !objeto.nome || !objeto.imagemUrl) {
+      res.send("Requisição inválida, obrigatório os campos nome e imagemUrl");
+      return;
+    }
 
-	app.get("/personagens/:id", async (req, res) => {
-		const id = req.params.id;
-		const personagem = await getPersonagemById(id);
-		res.send(personagem);
-	});
+    const result = await personagens.insertOne(objeto);
 
-	app.post("/personagens", async (req, res) => {
-		const objeto = req.body;
+    if (result.acknowledged == false) {
+      res.send("Ocorreu um erro");
+      return;
+    }
 
-		if (!objeto || !objeto.nome || !objeto.imagemUrl) {
-			res.send(
-				"Requisição inválida, certifique-se que tenha os campos nome e imagemUrl"
-			);
-			return;
-		}
+    res.send(objeto);
+  });
 
-		const insertCount = await personagens.insertOne(objeto);
+  app.put("/personagens/:id", async (req, res) => {
+    const id = req.params.id;
+    const objeto = req.body;
 
-		if (!insertCount) {
-			res.send("Ocorreu um erro");
-			return;
-		}
+    if (!objeto || !objeto.nome || !objeto.imagemUrl) {
+      res.send("Requisição inválida, obrigatório os campos nome e imagemUrl");
+      return;
+    }
 
-		res.send(objeto);
-	});
+    const quantidadePersonagens = await personagens.countDocuments({
+      _id: ObjectId(id),
+    });
 
-	//[PUT] Atualizar personagem
-	app.put("/personagens/:id", async (req, res) => {
-		const id = req.params.id;
-		const objeto = req.body;
-		res.send(
-			await personagens.updateOne(
-				{
-					_id: ObjectId(id),
-				},
-				{
-					$set: objeto,
-				}
-			)
-		);
-	});
+    if (quantidadePersonagens !== 1) {
+      res.send("Personagem não encontrado");
+      return;
+    }
 
-	//[DELETE] Deleta um personagem
-	app.delete("/personagens/:id", async (req, res) => {
-		const id = req.params.id;
+    const result = await personagens.updateOne(
+      {
+        _id: ObjectId(id),
+      },
+      {
+        $set: objeto,
+      }
+    );
 
-		res.send(
-			await personagens.deleteOne({
-				_id: ObjectId(id),
-			})
-		);
-	});
+    if (result.modifiedCount !== 1) {
+      res.send("Ocorreu um erro ao atualizar o personagem");
+      return;
+    }
 
-	app.listen(port, () => {
-		console.info(`App rodando em http://localhost:${port}`);
-	});
+    res.send(await getPersonagemById(id));
+  });
+
+  app.delete("/personagens/:id", async (req, res) => {
+    const id = req.params.id;
+
+    const quantidadePersonagens = await personagens.countDocuments({
+      _id: ObjectId(id),
+    });
+
+    if (quantidadePersonagens !== 1) {
+      res.send("Personagem não encontrao");
+      return;
+    }
+
+    const result = await personagens.deleteOne({
+      _id: ObjectId(id),
+    });
+
+    if (result.deletedCount !== 1) {
+      res.send("Ocorreu um erro ao remover o personagem");
+      return;
+    }
+
+    res.send("Personagem removido com sucesso!");
+  });
+
+  app.listen(port, () => {
+    console.info(`App rodando em http://localhost:${port}`);
+  });
 })();
