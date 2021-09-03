@@ -2,6 +2,8 @@ const express = require("express");
 const mongodb = require("mongodb");
 const ObjectId = mongodb.ObjectId;
 require("dotenv").config();
+require('express-async-errors');
+
 
 (async () => {
   const dbUser = process.env.DB_USER;
@@ -42,8 +44,9 @@ require("dotenv").config();
     next();
   });
 
-  app.get("/", (req, res) => {
-    res.send({ info: "Projeto Rick and Morty" });
+  app.get("/", async (req, res) => {
+    const teste = undefined;
+    res.send({ info: "Projeto Rick and Morty" + teste.adjso });
   });
 
   app.get("/personagens", async (req, res) => {
@@ -53,6 +56,12 @@ require("dotenv").config();
   app.get("/personagens/:id", async (req, res) => {
     const id = req.params.id;
     const personagem = await getPersonagemById(id);
+
+    if (!personagem) {
+      res.status(404).send({ error: "O personagem não foi encontrado" });
+      return;
+    }
+
     res.send(personagem);
   });
 
@@ -60,18 +69,22 @@ require("dotenv").config();
     const objeto = req.body;
 
     if (!objeto || !objeto.nome || !objeto.imagemUrl) {
-      res.send("Requisição inválida, obrigatório os campos nome e imagemUrl");
+      res
+        .status(400)
+        .send({
+          error: "Requisição inválida, obrigatório os campos nome e imagemUrl",
+        });
       return;
     }
 
     const result = await personagens.insertOne(objeto);
 
     if (result.acknowledged == false) {
-      res.send("Ocorreu um erro");
+      res.status(500).send({ error: "Ocorreu um erro" });
       return;
     }
 
-    res.send(objeto);
+    res.status(201).send(objeto);
   });
 
   app.put("/personagens/:id", async (req, res) => {
@@ -79,7 +92,11 @@ require("dotenv").config();
     const objeto = req.body;
 
     if (!objeto || !objeto.nome || !objeto.imagemUrl) {
-      res.send("Requisição inválida, obrigatório os campos nome e imagemUrl");
+      res
+        .status(400)
+        .send({
+          error: "Requisição inválida, obrigatório os campos nome e imagemUrl",
+        });
       return;
     }
 
@@ -88,7 +105,7 @@ require("dotenv").config();
     });
 
     if (quantidadePersonagens !== 1) {
-      res.send("Personagem não encontrado");
+      res.status(404).send("Personagem não encontrado");
       return;
     }
 
@@ -101,8 +118,10 @@ require("dotenv").config();
       }
     );
 
-    if (result.modifiedCount !== 1) {
-      res.send("Ocorreu um erro ao atualizar o personagem");
+    if (result.acknowledged == "undefined") {
+      res
+        .status(500)
+        .send({ error: "Ocorreu um erro ao atualizar o personagem" });
       return;
     }
 
@@ -117,7 +136,7 @@ require("dotenv").config();
     });
 
     if (quantidadePersonagens !== 1) {
-      res.send("Personagem não encontrao");
+      res.status(404).send({ error: "Personagem não encontrado" });
       return;
     }
 
@@ -126,11 +145,26 @@ require("dotenv").config();
     });
 
     if (result.deletedCount !== 1) {
-      res.send("Ocorreu um erro ao remover o personagem");
+      res
+        .status(500)
+        .send({ error: "Ocorreu um erro ao remover o personagem" });
       return;
     }
 
     res.send("Personagem removido com sucesso!");
+  });
+
+  app.all("*", function(req, res) {
+    res.status(404).send({ message: "Endpoint was not found"})
+  })
+
+  app.use((error, req, res, next) => {
+    res.status(error.status || 500).send({
+      error: {
+        status: error.status || 500,
+        message: error.message || "Internal Server Error",
+      },
+    });
   });
 
   app.listen(port, () => {
