@@ -45,8 +45,7 @@ require('express-async-errors');
   });
 
   app.get("/", async (req, res) => {
-    const teste = undefined;
-    res.send({ info: "Projeto Rick and Morty" + teste.adjso });
+    res.send({ info: "Projeto Rick and Morty" });
   });
 
   app.get("/personagens", async (req, res) => {
@@ -69,11 +68,7 @@ require('express-async-errors');
     const objeto = req.body;
 
     if (!objeto || !objeto.nome || !objeto.imagemUrl) {
-      res
-        .status(400)
-        .send({
-          error: "Requisição inválida, obrigatório os campos nome e imagemUrl",
-        });
+      res.status(400).send({ error: "Requisição inválida, obrigatório os campos nome e imagemUrl" });
       return;
     }
 
