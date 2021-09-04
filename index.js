@@ -20,7 +20,11 @@ require("express-async-errors");
     useUnifiedTopology: true,
   };
 
+  console.info("Conectando ao MongoDB Atlas");
+
   const client = await mongodb.MongoClient.connect(connectionString, options);
+
+  console.info("Conexão estabelecida com o MongoDB Atlas");
 
   const db = client.db("db_rickymorty");
   const personagens = db.collection("personagens");
@@ -67,11 +71,9 @@ require("express-async-errors");
     const objeto = req.body;
 
     if (!objeto || !objeto.nome || !objeto.imagemUrl) {
-      res
-        .status(400)
-        .send({
-          error: "Requisição inválida, obrigatório os campos nome e imagemUrl",
-        });
+      res.status(400).send({
+        error: "Requisição inválida, obrigatório os campos nome e imagemUrl",
+      });
       return;
     }
 
@@ -147,7 +149,7 @@ require("express-async-errors");
       return;
     }
 
-    res.send("Personagem removido com sucesso!");
+    res.send(204);
   });
 
   app.all("*", function (req, res) {
