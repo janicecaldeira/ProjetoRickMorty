@@ -1,8 +1,8 @@
 const express = require("express");
-const router = express.router();
+const router = express.Router();
 
 router.use(function timelog (req, res, next){
-    console.log("Time: ", Date.now());
+    next();
 });
 
 router.get("/", async (req, res) => {
