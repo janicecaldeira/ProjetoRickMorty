@@ -2,8 +2,7 @@ const express = require("express");
 const mongodb = require("mongodb");
 const ObjectId = mongodb.ObjectId;
 require("dotenv").config();
-require('express-async-errors');
-
+require("express-async-errors");
 
 (async () => {
   const dbUser = process.env.DB_USER;
@@ -68,7 +67,11 @@ require('express-async-errors');
     const objeto = req.body;
 
     if (!objeto || !objeto.nome || !objeto.imagemUrl) {
-      res.status(400).send({ error: "Requisição inválida, obrigatório os campos nome e imagemUrl" });
+      res
+        .status(400)
+        .send({
+          error: "Requisição inválida, obrigatório os campos nome e imagemUrl",
+        });
       return;
     }
 
@@ -87,11 +90,9 @@ require('express-async-errors');
     const objeto = req.body;
 
     if (!objeto || !objeto.nome || !objeto.imagemUrl) {
-      res
-        .status(400)
-        .send({
-          error: "Requisição inválida, obrigatório os campos nome e imagemUrl",
-        });
+      res.status(400).send({
+        error: "Requisição inválida, obrigatório os campos nome e imagemUrl",
+      });
       return;
     }
 
@@ -149,9 +150,9 @@ require('express-async-errors');
     res.send("Personagem removido com sucesso!");
   });
 
-  app.all("*", function(req, res) {
-    res.status(404).send({ message: "Endpoint was not found"})
-  })
+  app.all("*", function (req, res) {
+    res.status(404).send({ message: "Endpoint was not found" });
+  });
 
   app.use((error, req, res, next) => {
     res.status(error.status || 500).send({
