@@ -47,7 +47,7 @@ const ObjectId = mongodb.ObjectId;
       return;
     }
 
-    res.send(204);
+    res.send("Personagem removido com sucesso!");
   });
 })();
 
