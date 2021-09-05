@@ -1,0 +1,30 @@
+{
+  "name": "projetorickmorty",
+  "version": "1.0.0",
+  "description": "Projeto backend com API Rick and Morty",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index",
+		"dev": "nodemon index"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/janicecaldeira/ProjetoRickMorty.git"
+  },
+  "author": "Janice Caldeira",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/janicecaldeira/ProjetoRickMorty/issues"
+  },
+  "homepage": "https://github.com/janicecaldeira/ProjetoRickMorty#readme",
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "express-async-errors": "^3.1.1",
+    "mongodb": "^4.1.1",
+    "mongoose": "^6.0.4"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.12"
+  }
+}
