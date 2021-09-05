@@ -1,8 +1,12 @@
 const express = require("express");
 const mongodb = require("mongodb");
+const { get } = require("mongoose");
+const { route } = require("./components/home/home");
 const ObjectId = mongodb.ObjectId;
 require("dotenv").config();
 require("express-async-errors");
+const home = require("./components/home/home")
+const readAll = require("./components/read-all/read-all")
 
 (async () => {
   const dbUser = process.env.DB_USER;
@@ -47,9 +51,10 @@ require("express-async-errors");
     next();
   });
 
-  app.get("/", async (req, res) => {
-    res.send({ info: "Projeto Rick and Morty" });
-  });
+  app.use("/home", home);
+  // app.get("/", async (req, res) => {
+  //   res.send({ info: "Projeto Rick and Morty" });
+  // });
 
   app.get("/personagens", async (req, res) => {
     res.send(await getPersonagensValidas());
@@ -166,6 +171,6 @@ require("express-async-errors");
   });
 
   app.listen(port, () => {
-    console.info(`App rodando em http://localhost:${port}`);
+    console.info(`App rodando em http://localhost:${port}/${home}`);
   });
 })();
