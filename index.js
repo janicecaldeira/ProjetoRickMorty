@@ -1,12 +1,15 @@
 const express = require("express");
 const mongodb = require("mongodb");
-const { get } = require("mongoose");
-const { route } = require("./components/home/home");
 const ObjectId = mongodb.ObjectId;
 require("dotenv").config();
 require("express-async-errors");
-const home = require("./components/home/home")
-const readAll = require("./components/read-all/read-all")
+const home = require("./components/home/home");
+const readAll = require("./components/read-all/read-all");
+const readById = require("./components/read-by-id/read-by-id");
+const create = require("./components/create/create");
+const update = require("./components/update/update");
+const del = require("./components/delete/delete");
+
 
 (async () => {
   const dbUser = process.env.DB_USER;
@@ -52,110 +55,16 @@ const readAll = require("./components/read-all/read-all")
   });
 
   app.use("/home", home);
-  // app.get("/", async (req, res) => {
-  //   res.send({ info: "Projeto Rick and Morty" });
-  // });
 
-  app.get("/personagens", async (req, res) => {
-    res.send(await getPersonagensValidas());
-  });
+  app.use("/personagens", readAll);
+  
+  app.use("/:id", readById);
 
-  app.get("/personagens/:id", async (req, res) => {
-    const id = req.params.id;
-    const personagem = await getPersonagemById(id);
+  app.use("/personagens", create);
 
-    if (!personagem) {
-      res.status(404).send({ error: "O personagem não foi encontrado" });
-      return;
-    }
+  app.use("/:id", update);
 
-    res.send(personagem);
-  });
-
-  app.post("/personagens", async (req, res) => {
-    const objeto = req.body;
-
-    if (!objeto || !objeto.nome || !objeto.imagemUrl) {
-      res.status(400).send({
-        error: "Requisição inválida, obrigatório os campos nome e imagemUrl",
-      });
-      return;
-    }
-
-    const result = await personagens.insertOne(objeto);
-
-    if (result.acknowledged == false) {
-      res.status(500).send({ error: "Ocorreu um erro" });
-      return;
-    }
-
-    res.status(201).send(objeto);
-  });
-
-  app.put("/personagens/:id", async (req, res) => {
-    const id = req.params.id;
-    const objeto = req.body;
-
-    if (!objeto || !objeto.nome || !objeto.imagemUrl) {
-      res.status(400).send({
-        error: "Requisição inválida, obrigatório os campos nome e imagemUrl",
-      });
-      return;
-    }
-
-    const quantidadePersonagens = await personagens.countDocuments({
-      _id: ObjectId(id),
-    });
-
-    if (quantidadePersonagens !== 1) {
-      res.status(404).send("Personagem não encontrado");
-      return;
-    }
-
-    const result = await personagens.updateOne(
-      {
-        _id: ObjectId(id),
-      },
-      {
-        $set: objeto,
-      }
-    );
-
-    if (result.acknowledged == "undefined") {
-      res
-        .status(500)
-        .send({ error: "Ocorreu um erro ao atualizar o personagem" });
-      return;
-    }
-
-    res.send(await getPersonagemById(id));
-  });
-
-  app.delete("/personagens/:id", async (req, res) => {
-    const id = req.params.id;
-
-    const quantidadePersonagens = await personagens.countDocuments({
-      _id: ObjectId(id),
-    });
-
-    if (quantidadePersonagens !== 1) {
-      res.status(404).send({ error: "Personagem não encontrado" });
-      return;
-    }
-
-    const result = await personagens.deleteOne({
-      _id: ObjectId(id),
-    });
-
-    if (result.deletedCount !== 1) {
-      res
-        .status(500)
-        .send({ error: "Ocorreu um erro ao remover o personagem" });
-      return;
-    }
-
-    res.send(204);
-  });
+  app.use("/:id", del);
 
   app.all("*", function (req, res) {
     res.status(404).send({ message: "Endpoint was not found" });
@@ -171,6 +80,6 @@ const readAll = require("./components/read-all/read-all")
   });
 
   app.listen(port, () => {
-    console.info(`App rodando em http://localhost:${port}/${home}`);
+    console.info(`App rodando em http://localhost:${port}/home`);
   });
 })();
