@@ -56,15 +56,15 @@ const del = require("./components/delete/delete");
 
   app.use("/home", home);
 
-  app.use("/personagens", readAll);
+  app.use("/personagens/all", readAll);
   
-  app.use("/:id", readById);
+  app.use("/personagens/single", readById);
 
-  app.use("/personagens", create);
+  app.use("/personagens/create", create);
 
-  app.use("/:id", update);
+  app.use("/personagens/update", update);
 
-  app.use("/:id", del);
+  app.use("/personagens/delete", del);
 
   app.all("*", function (req, res) {
     res.status(404).send({ message: "Endpoint was not found" });
