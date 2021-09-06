@@ -1,8 +1,8 @@
 const express = require("express");
-const mongodb = require("mongodb");
-const ObjectId = mongodb.ObjectId;
 require("dotenv").config();
 require("express-async-errors");
+var cors = require("cors");
+//Requires para todos os endpoints
 const home = require("./components/home/home");
 const readAll = require("./components/read-all/read-all");
 const readById = require("./components/read-by-id/read-by-id");
@@ -10,76 +10,36 @@ const create = require("./components/create/create");
 const update = require("./components/update/update");
 const del = require("./components/delete/delete");
 
+const app = express();
+app.use(express.json());
 
-(async () => {
-  const dbUser = process.env.DB_USER;
-  const dbPassword = process.env.DB_PASSWORD;
-  const dbName = process.env.DB_NAME;
-  const dbChar = process.env.DB_CHAR;
+const port = process.env.PORT || 3000;
 
-  const app = express();
-  app.use(express.json());
+app.use(cors());
+app.options("*", cors());
 
-  const port = process.env.PORT || 3000;
-  const connectionString = `mongodb+srv://${dbUser}:${dbPassword}@cluster0.${dbChar}.mongodb.net/${dbName}?retryWrites=true&w=majority`;
+//Usando as rotas criadas em arquivos separados
+app.use("/home", home);
+app.use("/personagens/all", readAll);
+app.use("/personagens/single", readById);
+app.use("/personagens/create", create);
+app.use("/personagens/update", update);
+app.use("/personagens/delete", del);
 
-  const options = {
-    useUnifiedTopology: true,
-  };
+//Validação e tratamento de erros
+app.all("*", function (req, res) {
+  res.status(404).send({ message: "Endpoint was not found" });
+});
 
-  console.info("Conectando ao MongoDB Atlas");
-
-  const client = await mongodb.MongoClient.connect(connectionString, options);
-
-  console.info("Conexão estabelecida com o MongoDB Atlas");
-
-  const db = client.db("db_rickymorty");
-  const personagens = db.collection("personagens");
-
-  const getPersonagensValidas = () => personagens.find({}).toArray();
-
-  const getPersonagemById = async (id) =>
-    personagens.findOne({ _id: ObjectId(id) });
-
-  app.all("/*", (req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-
-    res.header("Access-Control-Allow-Methods", "*");
-
-    res.header(
-      "Access-Control-Allow-Headers",
-      "Access-Control-Allow-Headers, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization"
-    );
-
-    next();
+app.use((error, req, res, next) => {
+  res.status(error.status || 500).send({
+    error: {
+      status: error.status || 500,
+      message: error.message || "Internal Server Error",
+    },
   });
+});
 
-  app.use("/home", home);
-
-  app.use("/personagens/all", readAll);
-  
-  app.use("/personagens/single", readById);
-
-  app.use("/personagens/create", create);
-
-  app.use("/personagens/update", update);
-
-  app.use("/personagens/delete", del);
-
-  app.all("*", function (req, res) {
-    res.status(404).send({ message: "Endpoint was not found" });
-  });
-
-  app.use((error, req, res, next) => {
-    res.status(error.status || 500).send({
-      error: {
-        status: error.status || 500,
-        message: error.message || "Internal Server Error",
-      },
-    });
-  });
-
-  app.listen(port, () => {
-    console.info(`App rodando em http://localhost:${port}/home`);
-  });
-})();
+app.listen(port, () => {
+  console.info(`App rodando em http://localhost:${port}/home`);
+});
